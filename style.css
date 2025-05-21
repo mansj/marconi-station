@@ -1,0 +1,733 @@
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Share+Tech+Mono&display=swap');
+
+:root {
+    --primary: #2C3E50;      /* Deep navy blue */
+    --secondary: #E74C3C;    /* Vintage red */
+    --accent: #F1C40F;      /* Warm gold */
+    --background: #1A1A1A;   /* Dark background */
+    --text: #ECF0F1;        /* Off-white text */
+    --success: #27AE60;     /* Green for save */
+    --warning: #F39C12;     /* Orange for warnings */
+}
+
+body {
+    font-family: 'Special Elite', cursive;
+    font-weight: lighter;
+    background: var(--background);
+    color: var(--text);
+    overflow: hidden;
+}
+
+body.switched {
+    transition: color 0.6s, background-color 0.6s;
+}
+
+h1,
+h2 {
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    margin: 0;
+    padding: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5),
+                 0 0 20px rgba(0,0,0,0.3);
+}
+
+h1 {
+    font-size: 30pt;
+    margin-bottom: 10px;
+    color: var(--accent);
+}
+
+h2 {
+    font-size: 14pt;
+    font-style: italic;
+    font-family: 'Special Elite', cursive;
+    font-weight: lighter;
+    color: var(--text);
+}
+
+.header {
+    padding: 3em 0;
+    position: relative;
+    background: linear-gradient(to bottom,
+        rgba(26, 26, 26, 0.9),
+        rgba(26, 26, 26, 0.7));
+    border-bottom: 2px solid var(--accent);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(to right,
+        transparent,
+        var(--accent),
+        transparent);
+}
+
+/*
+  Built-in class:
+    # author: Name
+*/
+.byline {
+    font-style: italic;
+}
+
+.written-in-ink {
+    display: none;
+    z-index: 3;
+    font-size: 9pt;
+    font-family: 'Share Tech Mono', monospace;
+    text-align: center;
+    font-weight: 700;
+    position: fixed;
+    display: block;
+    width: 100%;
+    background: transparent;
+    color: var(--text);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    transition: color 0.6s, background 0.6s;
+    margin: 0;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    height: 14px;
+    top: 0;
+}
+
+/* 
+  Enables <iframe> support work on itch.io when using mobile iOS
+*/
+.outerContainer {
+    position: absolute;
+    display: block;
+    margin: 0;
+    padding: 0;
+    -webkit-overflow-scrolling: touch;
+    overflow: scroll;
+    overflow-x: hidden;
+    height: 100%;
+    width: 100%;
+    top: 0;
+    left: 0;
+    margin-top: 24px;
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+
+@media screen and (max-width: 980px) {
+    .outerContainer {
+        margin-top: 44px;
+        background-size: cover;
+        background-repeat: no-repeat;
+    }
+}
+
+.container {
+    display: block;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+    padding-top: 4em;
+    position: relative;
+    z-index: 5;
+    background: transparent;
+}
+
+.switched .container {
+    transition: none;
+}
+
+p {
+    font-size: 13pt;
+    color: var(--text);
+    line-height: 1.7em;
+    font-weight: lighter;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5),
+                 0 0 20px rgba(0,0,0,0.3);
+}
+
+a {
+    font-weight: 700;
+    color: var(--accent);
+    font-family: 'Share Tech Mono', monospace;
+    transition: color 0.6s;
+    text-decoration: none;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+a:hover {
+    color: var(--secondary);
+    transition: color 0.1s;
+}
+
+strong {
+    color: var(--accent);
+    font-weight: bold;
+}
+
+img {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+/* Remove margin from images inside our custom container */
+.image-container img {
+    margin: 0;
+}
+
+.container .hide {
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+}
+
+.container .invisible {
+    display: none;
+}
+
+.container>* {
+    opacity: 1.0;
+    transition: opacity 1.0s;
+}
+
+/*
+  Class applied to all choices
+  (Will always appear inside <p> element by default.)
+*/
+.choice {
+    text-align: center;
+    line-height: 1.7em;
+    margin: 1em 0;
+    padding: 0.5em;
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.choice:hover {
+    background: rgba(241, 196, 15, 0.1);
+    border-color: var(--accent);
+    transform: translateX(5px);
+}
+
+/* 
+  Class applied to first choice
+*/
+:not(.choice)+.choice {
+    padding-top: 1em;
+}
+
+/*
+  Class applied to choice links
+*/
+.choice a {
+    font-size: 15pt;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5),
+                 0 0 20px rgba(0,0,0,0.3);
+    position: relative;
+    padding: 0.5em 1em;
+    display: inline-block;
+}
+
+.choice a::before {
+    content: '▶';
+    position: absolute;
+    left: -20px;
+    opacity: 0;
+    transition: all 0.3s ease;
+}
+
+.choice:hover a::before {
+    opacity: 1;
+    left: -15px;
+}
+
+/* 
+  Built-in class:
+    The End # CLASS: end
+*/
+.end {
+    text-align: center;
+    font-weight: bold;
+    color: black;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+#controls {
+    display: none;
+    z-index: 4;
+    font-size: 9pt;
+    text-align: center;
+    padding: 8px 16px;
+    position: fixed;
+    right: 14px;
+    top: 4px;
+    user-select: none;
+    background: var(--primary);
+    color: var(--text);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    transition: all 0.3s ease;
+    border: 2px solid var(--accent);
+    border-radius: 4px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5),
+                inset 0 0 5px rgba(0,0,0,0.3);
+}
+
+#controls a {
+    display: inline-block;
+    padding: 4px 8px;
+    margin: 0 4px;
+    border: 1px solid var(--accent);
+    border-radius: 3px;
+    background: var(--background);
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 8pt;
+}
+
+#controls a:hover {
+    background: var(--accent);
+    color: var(--background);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+#controls [disabled] {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: var(--background);
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#controls>*:not(:last-child):after {
+    content: "•";
+    color: var(--accent);
+    margin: 0 8px;
+}
+
+/* Mobile adjustments */
+@media screen and (max-width: 980px) {
+    #controls {
+        padding: 12px;
+        top: 0;
+        left: 0;
+        right: 0;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+    
+    #controls a {
+        padding: 6px 12px;
+        font-size: 9pt;
+    }
+}
+
+/* 
+  Dark Theme (Added in Inky 0.10.0)
+    # theme: dark
+*/
+
+body.dark {
+    background: var(--background);
+    color: var(--text);
+}
+
+.dark h2 {
+    color: var(--text);
+}
+
+.dark .container {
+    background: var(--background);
+}
+
+.dark .written-in-ink {
+    background: var(--background);
+}
+
+.dark a {
+    color: var(--accent);
+    transition: color 0.6s;
+}
+
+.dark a:hover {
+    color: var(--secondary);
+}
+
+.dark strong {
+    color: var(--accent);
+}
+
+.dark #controls [disabled] {
+    color: var(--primary);
+}
+
+.dark .end {
+    color: var(--text);
+}
+
+.dark #controls {
+    background: var(--background);
+}
+
+.red {
+    color: #FF0000;
+}
+
+/* Image container styles */
+.image-container {
+    width: 100%;
+    margin: 2em 0;
+    position: relative;
+    text-align: center;
+    overflow: visible;
+}
+
+.main-image {
+    max-width: 600px;
+    max-height: 80vh;
+    display: inline-block;
+    position: relative;
+    z-index: 2;
+    mask-image: radial-gradient(
+        ellipse 90% 90% at center,
+        black 15%,
+        rgba(0, 0, 0, 0.3) 30%,
+        rgba(0, 0, 0, 0.1) 50%,
+        transparent 80%
+    );
+    -webkit-mask-image: radial-gradient(
+        ellipse 90% 90% at center,
+        black 15%,
+        rgba(0, 0, 0, 0.3) 30%,
+        rgba(0, 0, 0, 0.1) 50%,
+        transparent 80%
+    );
+}
+
+/* Background blur elements */
+.blur-side {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 50vw;
+    background-position: center;
+    background-size: cover;
+    filter: blur(30px) brightness(0.5);
+    transform: scale(1.2);
+    z-index: 1;
+    pointer-events: none;
+    transition: opacity 1.5s ease-in-out;
+}
+
+.blur-left {
+    left: 0;
+}
+
+.blur-right {
+    right: 0;
+}
+
+/* Edge blur elements */
+.edge-blur {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 100px;
+    background-repeat: no-repeat;
+    background-size: cover;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.edge-blur-left {
+    left: 0;
+    background-position: left center;
+    mask-image: linear-gradient(to right, black 20%, transparent);
+    -webkit-mask-image: linear-gradient(to right, black 20%, transparent);
+    filter: blur(8px);
+}
+
+.edge-blur-right {
+    right: 0;
+    background-position: right center;
+    mask-image: linear-gradient(to left, black 20%, transparent);
+    -webkit-mask-image: linear-gradient(to left, black 20%, transparent);
+    filter: blur(8px);
+}
+
+/* Remove the before/after gradients as we're using box-shadow for transition */
+.image-blur-container::before,
+.image-blur-container::after {
+    display: none;
+}
+
+/* Dark theme adjustments */
+.dark .blur-side {
+    filter: blur(30px) brightness(0.3);
+}
+
+/* Ensure the container background extends properly */
+.container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: inherit;
+    z-index: -1;
+}
+
+/* Add a subtle gradient overlay to ensure text readability */
+.outerContainer::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(to bottom,
+        rgba(0,0,0,0.3) 0%,
+        rgba(0,0,0,0.1) 20%,
+        rgba(0,0,0,0.1) 80%,
+        rgba(0,0,0,0.3) 100%);
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* Scanner effect */
+.image-container::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 10px;
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(0, 0, 0, 0.8) 40%,
+        rgba(0, 0, 0, 0.8) 60%,
+        transparent
+    );
+    filter: blur(4px);
+    opacity: 0.7;
+    animation: scan 3s linear infinite;
+    pointer-events: none;
+    z-index: 3;
+}
+
+@keyframes scan {
+    0% {
+        top: -10px;
+    }
+    100% {
+        top: 100%;
+    }
+}
+
+/* Ensure the container has proper dimensions for the scanner */
+.image-container {
+    display: inline-block;
+}
+
+/* Radio static effect */
+.outerContainer::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.03;
+    pointer-events: none;
+    z-index: 3;
+    animation: static 0.2s steps(2) infinite;
+}
+
+@keyframes static {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(-1px, 1px); }
+    50% { transform: translate(1px, -1px); }
+    75% { transform: translate(-1px, -1px); }
+    100% { transform: translate(1px, 1px); }
+}
+
+/* Radio dial animations */
+#controls {
+    position: relative;
+    overflow: hidden;
+}
+
+#controls::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+        transparent,
+        var(--accent) 20%,
+        var(--accent) 80%,
+        transparent
+    );
+    animation: dialScan 4s linear infinite;
+}
+
+@keyframes dialScan {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Vintage decorative elements */
+.container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: 
+        linear-gradient(90deg, 
+            transparent 0%,
+            rgba(241, 196, 15, 0.05) 50%,
+            transparent 100%
+        ),
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(241, 196, 15, 0.03) 2px,
+            rgba(241, 196, 15, 0.03) 4px
+        );
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Radio frequency display effect */
+.written-in-ink {
+    font-family: 'Share Tech Mono', monospace;
+    letter-spacing: 2px;
+    position: relative;
+    overflow: hidden;
+}
+
+.written-in-ink::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg,
+        transparent,
+        rgba(241, 196, 15, 0.1),
+        transparent
+    );
+    animation: frequencyScan 3s linear infinite;
+}
+
+@keyframes frequencyScan {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Vintage radio knobs */
+#controls a {
+    position: relative;
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: linear-gradient(145deg, 
+        var(--background),
+        var(--primary)
+    );
+    box-shadow: 
+        inset 0 2px 4px rgba(0,0,0,0.3),
+        0 2px 4px rgba(0,0,0,0.2);
+}
+
+#controls a::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 4px var(--accent);
+}
+
+#controls a:hover {
+    transform: translateY(-2px) rotate(5deg);
+    box-shadow: 
+        inset 0 2px 4px rgba(0,0,0,0.3),
+        0 4px 8px rgba(0,0,0,0.3);
+}
+
+/* Signal strength indicator */
+.header::after {
+    content: '';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 40px;
+    height: 20px;
+    background: 
+        linear-gradient(90deg,
+            var(--accent) 0%,
+            var(--accent) 20%,
+            transparent 20%,
+            transparent 40%,
+            var(--accent) 40%,
+            var(--accent) 60%,
+            transparent 60%,
+            transparent 80%,
+            var(--accent) 80%,
+            var(--accent) 100%
+        );
+    opacity: 0.5;
+    animation: signalStrength 2s ease-in-out infinite;
+}
+
+@keyframes signalStrength {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.8; }
+}
+
+/* CRT screen effect */
+.container {
+    position: relative;
+    overflow: hidden;
+}
+
+.container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        transparent 50%,
+        rgba(0, 0, 0, 0.1) 50%
+    );
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 2;
+    animation: scanline 10s linear infinite;
+}
+
+@keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+}
