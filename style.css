@@ -205,6 +205,13 @@ img {
     padding: 0.5em;
     border: 1px solid transparent;
     transition: all 0.3s ease;
+    cursor: pointer;
+    font-size: 15pt;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--accent);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5),
+                 0 0 20px rgba(0,0,0,0.3);
+    position: relative;
 }
 
 .choice:hover {
@@ -213,26 +220,7 @@ img {
     transform: translateX(5px);
 }
 
-/* 
-  Class applied to first choice
-*/
-:not(.choice)+.choice {
-    padding-top: 1em;
-}
-
-/*
-  Class applied to choice links
-*/
-.choice a {
-    font-size: 15pt;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.5),
-                 0 0 20px rgba(0,0,0,0.3);
-    position: relative;
-    padding: 0.5em 1em;
-    display: inline-block;
-}
-
-.choice a::before {
+.choice::before {
     content: '▶';
     position: absolute;
     left: -20px;
@@ -240,9 +228,14 @@ img {
     transition: all 0.3s ease;
 }
 
-.choice:hover a::before {
+.choice:hover::before {
     opacity: 1;
     left: -15px;
+}
+
+/* Remove the old choice a styles since we're not using them anymore */
+.choice a {
+    display: none;
 }
 
 /* 

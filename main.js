@@ -199,7 +199,7 @@
             // Create paragraph with anchor element
             var choiceParagraphElement = document.createElement('p');
             choiceParagraphElement.classList.add("choice");
-            choiceParagraphElement.innerHTML = `<a href='#'>${choice.text}</a>`
+            choiceParagraphElement.innerHTML = choice.text;
             storyContainer.appendChild(choiceParagraphElement);
 
             // Fade choice in after a short delay
@@ -207,9 +207,7 @@
             delay += 200.0;
 
             // Click on choice
-            var choiceAnchorEl = choiceParagraphElement.querySelectorAll("a")[0];
-            choiceAnchorEl.addEventListener("click", function(event) {
-
+            choiceParagraphElement.addEventListener("click", function(event) {
                 // Don't follow <a> link
                 event.preventDefault();
 
