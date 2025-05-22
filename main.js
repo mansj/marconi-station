@@ -4,6 +4,10 @@
     var story = new inkjs.Story(storyContent);
 
     var savePoint = "";
+    var isMuted = false;
+    var currentAudio = null;
+    var currentAudioLoop = null;
+    var fadeInAnimationFrame = null; // Track the fade-in animation
 
     let savedTheme;
     let globalTagTheme;
@@ -38,12 +42,48 @@
     setupTheme(globalTagTheme);
     var hasSave = loadSavePoint();
     setupButtons(hasSave);
+    setupMuteButton();
 
     // Set initial save point
     savePoint = story.state.toJson();
 
-    // Kick off the start of the story!
-    continueStory(true);
+    // Setup start button
+    var startButton = document.getElementById('start-game');
+    var startScreen = document.getElementById('start-screen');
+    
+    startButton.addEventListener('click', function() {
+        // Hide start screen
+        startScreen.style.display = 'none';
+        // Show game container
+        outerScrollContainer.style.display = 'block';
+        // Start the story
+        continueStory(true);
+    });
+
+    function setupMuteButton() {
+        const muteButton = document.getElementById('mute-button');
+        if (muteButton) {
+            muteButton.addEventListener('click', function() {
+                isMuted = !isMuted;
+                muteButton.textContent = isMuted ? '🔇' : '🔊';
+                muteButton.classList.toggle('muted');
+                
+                // Cancel any ongoing fade-in animation
+                if (fadeInAnimationFrame) {
+                    cancelAnimationFrame(fadeInAnimationFrame);
+                    fadeInAnimationFrame = null;
+                }
+                
+                // Update volume of any playing audio
+                if (currentAudio) {
+                    currentAudio.volume = isMuted ? 0 : 1;
+                }
+                if (currentAudioLoop) {
+                    currentAudioLoop.volume = isMuted ? 0 : 1;
+                }
+            });
+        }
+    }
 
     // Main story processing function. Each time this is called it generates
     // all the next content up as far as the next set of choices.
@@ -73,25 +113,63 @@
 
                 // AUDIO: src
                 if( splitTag && splitTag.property == "AUDIO" ) {
-                  if('audio' in this) {
-                    this.audio.pause();
-                    this.audio.removeAttribute('src');
-                    this.audio.load();
-                  }
-                  this.audio = new Audio(splitTag.val);
-                  this.audio.play();
+                    if(currentAudio) {
+                        currentAudio.pause();
+                        currentAudio.removeAttribute('src');
+                        currentAudio.load();
+                    }
+                    // Prepend audio/ folder to the audio path
+                    var audioPath = 'audio/' + splitTag.val;
+                    currentAudio = new Audio(audioPath);
+                    currentAudio.volume = isMuted ? 0 : 1;
+                    // Try to play, but handle the case where autoplay is blocked
+                    currentAudio.play().catch(function(error) {
+                        console.log("Audio autoplay was prevented. Audio will play on next user interaction.");
+                    });
                 }
 
                 // AUDIOLOOP: src
                 else if( splitTag && splitTag.property == "AUDIOLOOP" ) {
-                  if('audioLoop' in this) {
-                    this.audioLoop.pause();
-                    this.audioLoop.removeAttribute('src');
-                    this.audioLoop.load();
-                  }
-                  this.audioLoop = new Audio(splitTag.val);
-                  this.audioLoop.play();
-                  this.audioLoop.loop = true;
+                    if(currentAudioLoop) {
+                        currentAudioLoop.pause();
+                        currentAudioLoop.removeAttribute('src');
+                        currentAudioLoop.load();
+                    }
+                    // Prepend audioloops/ folder to the audio path
+                    var audioPath = 'audioloops/' + splitTag.val;
+                    currentAudioLoop = new Audio(audioPath);
+                    currentAudioLoop.loop = true;
+                    
+                    // Set initial volume based on mute state
+                    currentAudioLoop.volume = isMuted ? 0 : 0;
+                    
+                    // Try to play, but handle the case where autoplay is blocked
+                    currentAudioLoop.play().catch(function(error) {
+                        console.log("Background music autoplay was prevented. Music will play on next user interaction.");
+                    }).then(() => {
+                        if (!isMuted) {
+                            // Fade in over 2 seconds
+                            const fadeInDuration = 2000; // 2 seconds
+                            const startTime = Date.now();
+                            
+                            function fadeIn() {
+                                const elapsed = Date.now() - startTime;
+                                const progress = Math.min(elapsed / fadeInDuration, 1);
+                                
+                                if (currentAudioLoop) {
+                                    currentAudioLoop.volume = progress;
+                                    
+                                    if (progress < 1) {
+                                        fadeInAnimationFrame = requestAnimationFrame(fadeIn);
+                                    } else {
+                                        fadeInAnimationFrame = null;
+                                    }
+                                }
+                            }
+                            
+                            fadeIn();
+                        }
+                    });
                 }
 
                 // IMAGE: src
@@ -109,7 +187,9 @@
                     
                     // Create the main image
                     var imageElement = document.createElement('img');
-                    imageElement.src = splitTag.val;
+                    // Prepend images/ folder to the image path
+                    var imagePath = 'images/' + splitTag.val;
+                    imageElement.src = imagePath;
                     imageElement.classList.add('main-image');
                     
                     // Create the background blur elements
@@ -122,8 +202,8 @@
                     
                     // Wait for the image to load
                     imageElement.onload = function() {
-                        blurLeft.style.backgroundImage = `url(${splitTag.val})`;
-                        blurRight.style.backgroundImage = `url(${splitTag.val})`;
+                        blurLeft.style.backgroundImage = `url(${imagePath})`;
+                        blurRight.style.backgroundImage = `url(${imagePath})`;
                         
                         // Fade in the background blur elements
                         setTimeout(function() {
