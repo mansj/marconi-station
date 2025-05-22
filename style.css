@@ -200,37 +200,83 @@ img {
 */
 .choice {
     text-align: center;
-    line-height: 1.7em;
-    margin: 1em 0;
-    padding: 0.5em;
-    border: 1px solid transparent;
+    line-height: 1.4em;
+    margin: 0.8em auto;
+    padding: 0.6em 1.2em;
+    border: 2px solid var(--accent);
+    border-radius: 20px;
     transition: all 0.3s ease;
     cursor: pointer;
-    font-size: 15pt;
+    font-size: 13pt;
     font-family: 'Share Tech Mono', monospace;
     color: var(--accent);
     text-shadow: 0 2px 4px rgba(0,0,0,0.5),
                  0 0 20px rgba(0,0,0,0.3);
     position: relative;
+    max-width: 300px;
+    background: rgba(241, 196, 15, 0.1);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 .choice:hover {
-    background: rgba(241, 196, 15, 0.1);
-    border-color: var(--accent);
-    transform: translateX(5px);
+    background: rgba(241, 196, 15, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.choice:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2);
 }
 
 .choice::before {
     content: '▶';
     position: absolute;
-    left: -20px;
+    left: 15px;
     opacity: 0;
     transition: all 0.3s ease;
 }
 
 .choice:hover::before {
     opacity: 1;
-    left: -15px;
+    left: 20px;
+}
+
+/* Disabled state for all choices after selection */
+.choice.disabled {
+    opacity: 0.4;
+    cursor: default;
+    transform: none;
+    background: rgba(128, 128, 128, 0.05);
+    border-color: rgba(128, 128, 128, 0.3);
+    color: rgba(128, 128, 128, 0.7);
+    box-shadow: none;
+    pointer-events: none;
+}
+
+.choice.disabled:hover {
+    transform: none;
+    box-shadow: none;
+    background: rgba(128, 128, 128, 0.05);
+}
+
+.choice.disabled::before {
+    display: none;
+}
+
+/* Selected choice styling */
+.choice.selected {
+    opacity: 0.5;
+    background: rgba(241, 196, 15, 0.08);
+    border-color: rgba(241, 196, 15, 0.4);
+    color: rgba(241, 196, 15, 0.6);
+    box-shadow: none;
+}
+
+.choice.selected::before {
+    content: '✓';
+    opacity: 0.6;
+    left: 15px;
 }
 
 /* Remove the old choice a styles since we're not using them anymore */
@@ -794,3 +840,116 @@ body.dark {
 .mute-button.muted:hover {
     opacity: 0.8;
 }
+
+/* Station Sign Styling */
+.sign {
+    font-family: 'Share Tech Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-align: center;
+    padding: 15px 25px;
+    margin: 20px auto;
+    max-width: 80%;
+    background: var(--primary);
+    color: #E0E0E0;  /* Light gray text */
+    border: 3px solid #E0E0E0;
+    border-radius: 4px;
+    box-shadow: 
+        0 0 0 2px var(--background),
+        0 0 0 4px #E0E0E0,
+        0 4px 8px rgba(0,0,0,0.3);
+    position: relative;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+/* Decorative circles */
+.sign::before,
+.sign::after {
+    content: '';
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    background: #E0E0E0;
+    border-radius: 50%;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.sign::before {
+    left: -10px;
+}
+
+.sign::after {
+    right: -10px;
+}
+
+/* Add a subtle texture to the sign */
+.sign {
+    background-image: 
+        linear-gradient(45deg, 
+            rgba(224, 224, 224, 0.1) 25%, 
+            transparent 25%, 
+            transparent 50%, 
+            rgba(224, 224, 224, 0.1) 50%, 
+            rgba(224, 224, 224, 0.1) 75%, 
+            transparent 75%, 
+            transparent);
+    background-size: 4px 4px;
+}
+
+/* Add a subtle glow effect */
+.sign {
+    animation: signGlow 4s ease-in-out infinite;
+}
+
+@keyframes signGlow {
+    0%, 100% { box-shadow: 0 0 0 2px var(--background), 0 0 0 4px #E0E0E0, 0 4px 8px rgba(0,0,0,0.3); }
+    50% { box-shadow: 0 0 0 2px var(--background), 0 0 0 4px #E0E0E0, 0 4px 12px rgba(224, 224, 224, 0.4); }
+}
+
+/* Add a subtle scan line effect */
+.sign-scan {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+        transparent,
+        #E0E0E0 20%,
+        #E0E0E0 80%,
+        transparent
+    );
+    opacity: 0.5;
+    animation: scanLine 2s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes scanLine {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(100%); }
+}
+
+/* Dialogue styling for all character classes */
+.suit,
+.main,
+.angry,
+.sodder,
+.lady,
+.reception,
+.redman,
+.landini {
+    display: inline;
+    margin: 0;
+    padding-left: 1.2em;
+    font-style: italic;
+    color: #E0E0E0;  /* Light gray, slightly different from narrative text */
+    position: relative;
+    border-left: 3px solid #E0E0E0;
+    padding-right: 1em;
+    padding-top: 0.3em;
+    padding-bottom: 0.3em;
+}
+
+/* Removed quote marks from dialogue */

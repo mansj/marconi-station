@@ -57,9 +57,9 @@
         // Show game container
         outerScrollContainer.style.display = 'block';
         // Start the story
-        continueStory(true);
+    continueStory(true);
     });
-
+	
     function setupMuteButton() {
         const muteButton = document.getElementById('mute-button');
         if (muteButton) {
@@ -117,7 +117,7 @@
                         currentAudio.pause();
                         currentAudio.removeAttribute('src');
                         currentAudio.load();
-                    }
+                  }
                     // Prepend audio/ folder to the audio path
                     var audioPath = 'audio/' + splitTag.val;
                     currentAudio = new Audio(audioPath);
@@ -134,7 +134,7 @@
                         currentAudioLoop.pause();
                         currentAudioLoop.removeAttribute('src');
                         currentAudioLoop.load();
-                    }
+                  }
                     // Prepend audioloops/ folder to the audio path
                     var audioPath = 'audioloops/' + splitTag.val;
                     currentAudioLoop = new Audio(audioPath);
@@ -291,8 +291,23 @@
                 // Don't follow <a> link
                 event.preventDefault();
 
-                // Remove all existing choices
-                removeAll(".choice");
+                // Play accept sound if not muted
+                if (!isMuted) {
+                    var acceptSound = new Audio('audio/accept.mp3');
+                    acceptSound.volume = 1;
+                    acceptSound.play().catch(function(error) {
+                        console.log("Accept sound autoplay was prevented.");
+                    });
+                }
+
+                // Mark this choice as selected
+                this.classList.add('selected');
+
+                // Disable all choices
+                var allChoices = document.querySelectorAll('.choice');
+                allChoices.forEach(function(choice) {
+                    choice.classList.add('disabled');
+                });
 
                 // Tell the story where to go next
                 story.ChooseChoiceIndex(choice.index);
