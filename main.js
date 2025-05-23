@@ -5,6 +5,13 @@
 
     var savePoint = "";
     var isMuted = false;
+    try {
+        if (window.localStorage.getItem('marconi-mute') === 'true') {
+            isMuted = true;
+        }
+    } catch (e) {
+        // Ignore localStorage errors
+    }
     var currentAudio = null;
     var currentAudioLoop = null;
     var fadeInAnimationFrame = null; // Track the fade-in animation
@@ -63,17 +70,20 @@
     function setupMuteButton() {
         const muteButton = document.getElementById('mute-button');
         if (muteButton) {
+            // Set initial state on load
+            muteButton.textContent = isMuted ? '🔇' : '🔊';
+            if (isMuted) muteButton.classList.add('muted');
             muteButton.addEventListener('click', function() {
                 isMuted = !isMuted;
                 muteButton.textContent = isMuted ? '🔇' : '🔊';
                 muteButton.classList.toggle('muted');
-                
+                // Save mute state to localStorage
+                window.localStorage.setItem('marconi-mute', isMuted ? 'true' : 'false');
                 // Cancel any ongoing fade-in animation
                 if (fadeInAnimationFrame) {
                     cancelAnimationFrame(fadeInAnimationFrame);
                     fadeInAnimationFrame = null;
                 }
-                
                 // Update volume of any playing audio
                 if (currentAudio) {
                     currentAudio.volume = isMuted ? 0 : 1;
@@ -199,17 +209,39 @@
                     blurRight.classList.add('blur-side', 'blur-right');
                     blurLeft.style.opacity = '0';
                     blurRight.style.opacity = '0';
-                    
-                    // Wait for the image to load
-                    imageElement.onload = function() {
-                        blurLeft.style.backgroundImage = `url(${imagePath})`;
-                        blurRight.style.backgroundImage = `url(${imagePath})`;
-                        
-                        // Fade in the background blur elements
+
+                    // Helper to set blur backgrounds
+                    function setBlurBackground(url) {
+                        blurLeft.style.backgroundImage = `url(${url})`;
+                        blurRight.style.backgroundImage = `url(${url})`;
                         setTimeout(function() {
                             blurLeft.style.opacity = '1';
                             blurRight.style.opacity = '1';
                         }, 150);
+                    }
+
+                    // Wait for the image to load
+                    imageElement.onload = function() {
+                        if (imagePath.toLowerCase().endsWith('.gif')) {
+                            try {
+                                var canvas = document.createElement('canvas');
+                                canvas.width = imageElement.naturalWidth;
+                                canvas.height = imageElement.naturalHeight;
+                                var ctx = canvas.getContext('2d');
+                                ctx.drawImage(imageElement, 0, 0);
+                                var firstFrameUrl = canvas.toDataURL('image/png');
+                                if (canvas.width > 0 && canvas.height > 0 && firstFrameUrl && firstFrameUrl.startsWith('data:image/png')) {
+                                    setBlurBackground(firstFrameUrl);
+                                } else {
+                                    setBlurBackground('');
+                                }
+                            } catch (e) {
+                                console.warn('Error rendering GIF first frame for blur background:', e);
+                                setBlurBackground('');
+                            }
+                        } else {
+                            setBlurBackground(imagePath);
+                        }
                     };
                     
                     // Add elements to the DOM
@@ -274,6 +306,9 @@
         }
 
         // Create HTML choices from ink choices
+        if (story.currentChoices.length > 0) {
+            storyContainer.classList.add('choices-active');
+        }
         story.currentChoices.forEach(function(choice) {
 
             // Create paragraph with anchor element
@@ -308,6 +343,9 @@
                 allChoices.forEach(function(choice) {
                     choice.classList.add('disabled');
                 });
+
+                // Remove extra space after choices are made
+                storyContainer.classList.remove('choices-active');
 
                 // Tell the story where to go next
                 story.ChooseChoiceIndex(choice.index);

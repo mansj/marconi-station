@@ -931,25 +931,70 @@ body.dark {
     100% { transform: translateY(100%); }
 }
 
-/* Dialogue styling for all character classes */
+/* Dialogue styling for all character classes except .main */
 .suit,
-.main,
 .angry,
 .sodder,
 .lady,
 .reception,
 .redman,
 .landini {
-    display: inline;
+    display: block;
     margin: 0;
-    padding-left: 1.2em;
+    padding-left: 0;
     font-style: italic;
-    color: #E0E0E0;  /* Light gray, slightly different from narrative text */
+    color: #E0E0E0;
     position: relative;
-    border-left: 3px solid #E0E0E0;
     padding-right: 1em;
     padding-top: 0.3em;
     padding-bottom: 0.3em;
 }
 
 /* Removed quote marks from dialogue */
+
+.main {
+    display: block;
+    margin: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    font-style: normal;
+    color: var(--accent); /* light yellow */
+    border-left: none;
+    background: none;
+}
+
+.suit::before,
+.main::before,
+.angry::before,
+.sodder::before,
+.lady::before,
+.reception::before,
+.redman::before,
+.landini::before {
+    content: '\201D'; /* right double curly quote */
+    font-size: 1.2em;
+    color: #F8E9A1;
+    margin-right: 0.15em;
+    vertical-align: -0.1em;
+}
+
+.suit::after,
+.main::after,
+.angry::after,
+.sodder::after,
+.lady::after,
+.reception::after,
+.redman::after,
+.landini::after {
+    content: '\201D'; /* right double curly quote at end too */
+    font-size: 1.2em;
+    color: #F8E9A1;
+    margin-left: 0.15em;
+    vertical-align: -0.1em;
+}
+
+#story.choices-active {
+    margin-bottom: 4em;
+}
