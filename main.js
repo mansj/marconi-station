@@ -3,18 +3,52 @@
     // Create ink story from the content using inkjs
     var story = new inkjs.Story(storyContent);
 
+    // Add error handler
+    story.onError = function(message, type) {
+        if (type === "RUNTIME WARNING" && message.includes("exact internal story location couldn't be found")) {
+            console.warn("Save state mismatch detected - clearing save and restarting");
+            // Clear save state and restart
+            try {
+                window.localStorage.removeItem('save-state');
+                document.getElementById("reload").setAttribute("disabled", "disabled");
+                restart();
+                return true; // Prevent error from propagating
+            } catch (e) {
+                console.warn("Couldn't clear save state:", e);
+            }
+        }
+        console.warn(`Story error (${type}):`, message);
+    };
+
     var savePoint = "";
     var isMuted = false;
+    
+    // Howler.js audio instances
+    var currentSound = null;
+    var currentLoop = null;
+    var acceptSound = null;
+
+    // Configure Howler global settings
+    Howler.autoUnlock = true;
+    Howler.usingWebAudio = true;  // Force Web Audio API
+    
+    // Initialize accept sound
+    acceptSound = new Howl({
+        src: ['./audio/accept.mp3'],
+        volume: 1.0,
+        preload: true,
+        html5: false,  // Force Web Audio API
+        format: ['mp3']
+    });
+
+    // Initialize mute state from localStorage
     try {
-        if (window.localStorage.getItem('marconi-mute') === 'true') {
-            isMuted = true;
-        }
+        isMuted = window.localStorage.getItem('marconi-mute') === 'true';
+        // Set initial Howler volume based on mute state
+        Howler.volume(isMuted ? 0 : 1);
     } catch (e) {
         // Ignore localStorage errors
     }
-    var currentAudio = null;
-    var currentAudioLoop = null;
-    var fadeInAnimationFrame = null; // Track the fade-in animation
 
     let savedTheme;
     let globalTagTheme;
@@ -59,37 +93,42 @@
     var startScreen = document.getElementById('start-screen');
     
     startButton.addEventListener('click', function() {
+        // Clear any existing save state for a fresh start
+        window.localStorage.removeItem('save-state');
+        document.getElementById("reload").setAttribute("disabled", "disabled");
+        story.ResetState();
+        
         // Hide start screen
         startScreen.style.display = 'none';
         // Show game container
         outerScrollContainer.style.display = 'block';
-        // Start the story
-    continueStory(true);
+        // Start the story fresh
+        continueStory(true);
     });
 	
     function setupMuteButton() {
         const muteButton = document.getElementById('mute-button');
         if (muteButton) {
-            // Set initial state on load
+            // Set initial button state
             muteButton.textContent = isMuted ? '🔇' : '🔊';
             if (isMuted) muteButton.classList.add('muted');
+            
             muteButton.addEventListener('click', function() {
                 isMuted = !isMuted;
                 muteButton.textContent = isMuted ? '🔇' : '🔊';
                 muteButton.classList.toggle('muted');
-                // Save mute state to localStorage
                 window.localStorage.setItem('marconi-mute', isMuted ? 'true' : 'false');
-                // Cancel any ongoing fade-in animation
-                if (fadeInAnimationFrame) {
-                    cancelAnimationFrame(fadeInAnimationFrame);
-                    fadeInAnimationFrame = null;
-                }
-                // Update volume of any playing audio
-                if (currentAudio) {
-                    currentAudio.volume = isMuted ? 0 : 1;
-                }
-                if (currentAudioLoop) {
-                    currentAudioLoop.volume = isMuted ? 0 : 1;
+                
+                // Set global Howler volume
+                Howler.volume(isMuted ? 0 : 1);
+                
+                // If we have a current loop playing, update its volume immediately
+                if (currentLoop && currentLoop.playing()) {
+                    if (isMuted) {
+                        currentLoop.volume(0);
+                    } else {
+                        currentLoop.fade(0, 1, 1000);
+                    }
                 }
             });
         }
@@ -123,61 +162,45 @@
 
                 // AUDIO: src
                 if( splitTag && splitTag.property == "AUDIO" ) {
-                    if(currentAudio) {
-                        currentAudio.pause();
-                        currentAudio.removeAttribute('src');
-                        currentAudio.load();
-                  }
-                    // Prepend audio/ folder to the audio path
-                    var audioPath = 'audio/' + splitTag.val;
-                    currentAudio = new Audio(audioPath);
-                    currentAudio.volume = isMuted ? 0 : 1;
-                    // Try to play, but handle the case where autoplay is blocked
-                    currentAudio.play().catch(function(error) {
-                        console.log("Audio autoplay was prevented. Audio will play on next user interaction.");
+                    if(currentSound) {
+                        currentSound.unload();  // Properly unload previous sound
+                    }
+                    // Create new Howl instance for one-shot sounds
+                    currentSound = new Howl({
+                        src: ['./audio/' + splitTag.val],
+                        volume: isMuted ? 0 : 1.0,
+                        html5: false,  // Force Web Audio API
+                        format: ['mp3'],
+                        onload: function() {
+                            if (!isMuted) {
+                                this.play();
+                            }
+                        }
                     });
                 }
 
                 // AUDIOLOOP: src
                 else if( splitTag && splitTag.property == "AUDIOLOOP" ) {
-                    if(currentAudioLoop) {
-                        currentAudioLoop.pause();
-                        currentAudioLoop.removeAttribute('src');
-                        currentAudioLoop.load();
-                  }
-                    // Prepend audioloops/ folder to the audio path
-                    var audioPath = 'audioloops/' + splitTag.val;
-                    currentAudioLoop = new Audio(audioPath);
-                    currentAudioLoop.loop = true;
+                    if(currentLoop) {
+                        currentLoop.unload();  // Properly unload previous loop
+                    }
                     
-                    // Set initial volume based on mute state
-                    currentAudioLoop.volume = isMuted ? 0 : 0;
+                    // Get the base filename without extension
+                    const baseFilename = splitTag.val.replace(/\.[^/.]+$/, "");
                     
-                    // Try to play, but handle the case where autoplay is blocked
-                    currentAudioLoop.play().catch(function(error) {
-                        console.log("Background music autoplay was prevented. Music will play on next user interaction.");
-                    }).then(() => {
-                        if (!isMuted) {
-                            // Fade in over 2 seconds
-                            const fadeInDuration = 2000; // 2 seconds
-                            const startTime = Date.now();
-                            
-                            function fadeIn() {
-                                const elapsed = Date.now() - startTime;
-                                const progress = Math.min(elapsed / fadeInDuration, 1);
-                                
-                                if (currentAudioLoop) {
-                                    currentAudioLoop.volume = progress;
-                                    
-                                    if (progress < 1) {
-                                        fadeInAnimationFrame = requestAnimationFrame(fadeIn);
-                                    } else {
-                                        fadeInAnimationFrame = null;
-                                    }
-                                }
+                    // Create new Howl instance for looping audio
+                    currentLoop = new Howl({
+                        src: ['./audioloops/' + baseFilename + '.mp3'],  // Try MP3 first
+                        loop: true,
+                        volume: isMuted ? 0 : 0,
+                        html5: false,  // Force Web Audio API
+                        format: ['mp3'],
+                        preload: true,
+                        onload: function() {
+                            if (!isMuted) {
+                                this.play();
+                                this.fade(0, 1, 2000);
                             }
-                            
-                            fadeIn();
                         }
                     });
                 }
@@ -199,7 +222,6 @@
                     var imageElement = document.createElement('img');
                     // Prepend images/ folder to the image path
                     var imagePath = 'images/' + splitTag.val;
-                    imageElement.src = imagePath;
                     imageElement.classList.add('main-image');
                     
                     // Create the background blur elements
@@ -222,26 +244,17 @@
 
                     // Wait for the image to load
                     imageElement.onload = function() {
+                        // Skip blur effect for GIFs
                         if (imagePath.toLowerCase().endsWith('.gif')) {
-                            try {
-                                var canvas = document.createElement('canvas');
-                                canvas.width = imageElement.naturalWidth;
-                                canvas.height = imageElement.naturalHeight;
-                                var ctx = canvas.getContext('2d');
-                                ctx.drawImage(imageElement, 0, 0);
-                                var firstFrameUrl = canvas.toDataURL('image/png');
-                                if (canvas.width > 0 && canvas.height > 0 && firstFrameUrl && firstFrameUrl.startsWith('data:image/png')) {
-                                    setBlurBackground(firstFrameUrl);
-                                } else {
-                                    setBlurBackground('');
-                                }
-                            } catch (e) {
-                                console.warn('Error rendering GIF first frame for blur background:', e);
-                                setBlurBackground('');
-                            }
+                            setBlurBackground('');
                         } else {
                             setBlurBackground(imagePath);
                         }
+                    };
+
+                    imageElement.onerror = function() {
+                        console.debug("Error loading image:", imagePath);
+                        setBlurBackground('');
                     };
                     
                     // Add elements to the DOM
@@ -250,6 +263,9 @@
                     outerContainer.appendChild(blurRight);
                     imageContainer.appendChild(imageElement);
                     storyContainer.appendChild(imageContainer);
+                    
+                    // Set src after setting up event handlers
+                    imageElement.src = imagePath;
                     
                     showAfter(delay, imageContainer);
                     delay += 200.0;
@@ -328,11 +344,7 @@
 
                 // Play accept sound if not muted
                 if (!isMuted) {
-                    var acceptSound = new Audio('audio/accept.mp3');
-                    acceptSound.volume = 1;
-                    acceptSound.play().catch(function(error) {
-                        console.log("Accept sound autoplay was prevented.");
-                    });
+                    acceptSound.play();
                 }
 
                 // Mark this choice as selected
@@ -468,15 +480,21 @@
 
     // Loads save state if exists in the browser memory
     function loadSavePoint() {
-
         try {
             let savedState = window.localStorage.getItem('save-state');
             if (savedState) {
-                story.state.LoadJson(savedState);
-                return true;
+                try {
+                    story.state.LoadJson(savedState);
+                    return true;
+                } catch (e) {
+                    console.warn("Error loading save state:", e);
+                    // Clear invalid save state
+                    window.localStorage.removeItem('save-state');
+                    document.getElementById("reload").setAttribute("disabled", "disabled");
+                }
             }
         } catch (e) {
-            console.debug("Couldn't load save state");
+            console.debug("Couldn't access save state");
         }
         return false;
     }
@@ -536,7 +554,18 @@
             removeAll("img");
             try {
                 let savedState = window.localStorage.getItem('save-state');
-                if (savedState) story.state.LoadJson(savedState);
+                if (savedState) {
+                    try {
+                        story.state.LoadJson(savedState);
+                    } catch (e) {
+                        console.warn("Error loading save state:", e);
+                        // Clear invalid save state
+                        window.localStorage.removeItem('save-state');
+                        reloadEl.setAttribute("disabled", "disabled");
+                        restart();
+                        return;
+                    }
+                }
             } catch (e) {
                 console.debug("Couldn't load save state");
             }
