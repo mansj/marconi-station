@@ -22,10 +22,15 @@
 
     var savePoint = "";
     var isMuted = false;
+    var isMusicMuted = false;
+    var isLoopMuted = false;
+    var musicVolume = 1.0;  // Store music volume
+    var loopVolume = 1.0;   // Store loop volume
     
     // Howler.js audio instances
     var currentSound = null;
     var currentLoop = null;
+    var currentMusic = null;  // Add music loop instance
     var acceptSound = null;
 
     // Configure Howler global settings
@@ -121,17 +126,92 @@
                 
                 // Set global Howler volume
                 Howler.volume(isMuted ? 0 : 1);
-                
-                // If we have a current loop playing, update its volume immediately
-                if (currentLoop && currentLoop.playing()) {
-                    if (isMuted) {
-                        currentLoop.volume(0);
-                    } else {
-                        currentLoop.fade(0, 1, 1000);
-                    }
-                }
             });
         }
+
+        // Create container for new mute buttons and sliders
+        const muteControls = document.createElement('div');
+        muteControls.style.position = 'fixed';
+        muteControls.style.top = '50px';
+        muteControls.style.right = '10px';
+        muteControls.style.zIndex = '1000';
+        muteControls.style.display = 'flex';
+        muteControls.style.flexDirection = 'column';
+        muteControls.style.gap = '5px';
+        muteControls.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        muteControls.style.padding = '10px';
+        muteControls.style.borderRadius = '5px';
+        document.body.appendChild(muteControls);
+
+        // Music controls container
+        const musicControls = document.createElement('div');
+        musicControls.style.display = 'flex';
+        musicControls.style.flexDirection = 'column';
+        musicControls.style.gap = '5px';
+        muteControls.appendChild(musicControls);
+
+        // Music mute button
+        const musicMuteButton = document.createElement('button');
+        musicMuteButton.textContent = isMusicMuted ? '🔇 Music' : '🔊 Music';
+        musicMuteButton.style.padding = '5px 10px';
+        musicMuteButton.addEventListener('click', function() {
+            isMusicMuted = !isMusicMuted;
+            musicMuteButton.textContent = isMusicMuted ? '🔇 Music' : '🔊 Music';
+            if (currentMusic && currentMusic.playing()) {
+                currentMusic.volume(isMusicMuted ? 0 : musicVolume);
+            }
+        });
+        musicControls.appendChild(musicMuteButton);
+
+        // Music volume slider
+        const musicSlider = document.createElement('input');
+        musicSlider.type = 'range';
+        musicSlider.min = '0';
+        musicSlider.max = '100';
+        musicSlider.value = musicVolume * 100;
+        musicSlider.style.width = '100px';
+        musicSlider.addEventListener('input', function() {
+            musicVolume = this.value / 100;
+            if (currentMusic && currentMusic.playing() && !isMusicMuted) {
+                currentMusic.volume(musicVolume);
+            }
+        });
+        musicControls.appendChild(musicSlider);
+
+        // Loop controls container
+        const loopControls = document.createElement('div');
+        loopControls.style.display = 'flex';
+        loopControls.style.flexDirection = 'column';
+        loopControls.style.gap = '5px';
+        muteControls.appendChild(loopControls);
+
+        // Audioloop mute button
+        const loopMuteButton = document.createElement('button');
+        loopMuteButton.textContent = isLoopMuted ? '🔇 Loops' : '🔊 Loops';
+        loopMuteButton.style.padding = '5px 10px';
+        loopMuteButton.addEventListener('click', function() {
+            isLoopMuted = !isLoopMuted;
+            loopMuteButton.textContent = isLoopMuted ? '🔇 Loops' : '🔊 Loops';
+            if (currentLoop && currentLoop.playing()) {
+                currentLoop.volume(isLoopMuted ? 0 : loopVolume);
+            }
+        });
+        loopControls.appendChild(loopMuteButton);
+
+        // Loop volume slider
+        const loopSlider = document.createElement('input');
+        loopSlider.type = 'range';
+        loopSlider.min = '0';
+        loopSlider.max = '100';
+        loopSlider.value = loopVolume * 100;
+        loopSlider.style.width = '100px';
+        loopSlider.addEventListener('input', function() {
+            loopVolume = this.value / 100;
+            if (currentLoop && currentLoop.playing() && !isLoopMuted) {
+                currentLoop.volume(loopVolume);
+            }
+        });
+        loopControls.appendChild(loopSlider);
     }
 
     // Main story processing function. Each time this is called it generates
@@ -185,21 +265,37 @@
                         currentLoop.unload();  // Properly unload previous loop
                     }
                     
-                    // Get the base filename without extension
-                    const baseFilename = splitTag.val.replace(/\.[^/.]+$/, "");
-                    
-                    // Create new Howl instance for looping audio
+                    // Create new Howl instance for loop
                     currentLoop = new Howl({
-                        src: ['./audioloops/' + baseFilename + '.mp3'],  // Try MP3 first
+                        src: ['./audioloops/' + splitTag.val],
                         loop: true,
-                        volume: isMuted ? 0 : 0,
+                        volume: isLoopMuted ? 0 : loopVolume,
                         html5: false,  // Force Web Audio API
                         format: ['mp3'],
-                        preload: true,
                         onload: function() {
-                            if (!isMuted) {
+                            if (!isLoopMuted) {
                                 this.play();
-                                this.fade(0, 1, 2000);
+                            }
+                        }
+                    });
+                }
+
+                // MUSIC: src
+                else if( splitTag && splitTag.property == "MUSIC" ) {
+                    if(currentMusic) {
+                        currentMusic.unload();  // Properly unload previous music
+                    }
+                    
+                    // Create new Howl instance for music
+                    currentMusic = new Howl({
+                        src: ['./music/' + splitTag.val],
+                        loop: true,
+                        volume: isMusicMuted ? 0 : musicVolume,
+                        html5: true,  // Use HTML5 audio
+                        format: ['mp3'],
+                        onload: function() {
+                            if (!isMusicMuted) {
+                                this.play();
                             }
                         }
                     });
@@ -539,7 +635,6 @@
             } catch (e) {
                 console.warn("Couldn't save state");
             }
-
         });
 
         let reloadEl = document.getElementById("reload");
