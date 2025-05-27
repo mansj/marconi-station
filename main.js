@@ -24,13 +24,13 @@
     var isMuted = false;
     var isMusicMuted = false;
     var isLoopMuted = false;
-    var musicVolume = 1.0;  // Store music volume
-    var loopVolume = 1.0;   // Store loop volume
+    var musicVolume = 1.0;
+    var loopVolume = 1.0;
     
     // Howler.js audio instances
     var currentSound = null;
     var currentLoop = null;
-    var currentMusic = null;  // Add music loop instance
+    var currentMusic = null;
     var acceptSound = null;
 
     // Configure Howler global settings
@@ -46,9 +46,13 @@
         format: ['mp3']
     });
 
-    // Initialize mute state from localStorage
+    // Initialize mute state and volumes from localStorage
     try {
         isMuted = window.localStorage.getItem('marconi-mute') === 'true';
+        isMusicMuted = window.localStorage.getItem('marconi-music-mute') === 'true';
+        isLoopMuted = window.localStorage.getItem('marconi-loop-mute') === 'true';
+        musicVolume = parseFloat(window.localStorage.getItem('marconi-music-volume')) || 1.0;
+        loopVolume = parseFloat(window.localStorage.getItem('marconi-loop-volume')) || 1.0;
         // Set initial Howler volume based on mute state
         Howler.volume(isMuted ? 0 : 1);
     } catch (e) {
@@ -112,24 +116,7 @@
     });
 	
     function setupMuteButton() {
-        const muteButton = document.getElementById('mute-button');
-        if (muteButton) {
-            // Set initial button state
-            muteButton.textContent = isMuted ? '🔇' : '🔊';
-            if (isMuted) muteButton.classList.add('muted');
-            
-            muteButton.addEventListener('click', function() {
-                isMuted = !isMuted;
-                muteButton.textContent = isMuted ? '🔇' : '🔊';
-                muteButton.classList.toggle('muted');
-                window.localStorage.setItem('marconi-mute', isMuted ? 'true' : 'false');
-                
-                // Set global Howler volume
-                Howler.volume(isMuted ? 0 : 1);
-            });
-        }
-
-        // Create container for new mute buttons and sliders
+        // Create container for all audio controls
         const muteControls = document.createElement('div');
         muteControls.style.position = 'fixed';
         muteControls.style.top = '50px';
@@ -142,6 +129,37 @@
         muteControls.style.padding = '10px';
         muteControls.style.borderRadius = '5px';
         document.body.appendChild(muteControls);
+
+        // Main mute button container
+        const mainMuteControls = document.createElement('div');
+        mainMuteControls.style.display = 'flex';
+        mainMuteControls.style.flexDirection = 'column';
+        mainMuteControls.style.gap = '5px';
+        muteControls.appendChild(mainMuteControls);
+
+        // Main mute button
+        const muteButton = document.createElement('button');
+        muteButton.textContent = isMuted ? '🔇 All Sound' : '🔊 All Sound';
+        muteButton.style.padding = '5px 10px';
+        muteButton.addEventListener('click', function() {
+            isMuted = !isMuted;
+            muteButton.textContent = isMuted ? '🔇 All Sound' : '🔊 All Sound';
+            window.localStorage.setItem('marconi-mute', isMuted ? 'true' : 'false');
+            
+            // Set global Howler volume
+            Howler.volume(isMuted ? 0 : 1);
+
+            // If unmuting, check if music and loops should be playing
+            if (!isMuted) {
+                if (currentMusic && !currentMusic.playing() && !isMusicMuted) {
+                    currentMusic.play();
+                }
+                if (currentLoop && !currentLoop.playing() && !isLoopMuted) {
+                    currentLoop.play();
+                }
+            }
+        });
+        mainMuteControls.appendChild(muteButton);
 
         // Music controls container
         const musicControls = document.createElement('div');
@@ -157,8 +175,18 @@
         musicMuteButton.addEventListener('click', function() {
             isMusicMuted = !isMusicMuted;
             musicMuteButton.textContent = isMusicMuted ? '🔇 Music' : '🔊 Music';
-            if (currentMusic && currentMusic.playing()) {
-                currentMusic.volume(isMusicMuted ? 0 : musicVolume);
+            window.localStorage.setItem('marconi-music-mute', isMusicMuted ? 'true' : 'false');
+            
+            if (currentMusic) {
+                if (isMusicMuted) {
+                    currentMusic.volume(0);
+                } else {
+                    currentMusic.volume(musicVolume);
+                    // If unmuting and not playing, start playback
+                    if (!currentMusic.playing() && !isMuted) {
+                        currentMusic.play();
+                    }
+                }
             }
         });
         musicControls.appendChild(musicMuteButton);
@@ -172,6 +200,7 @@
         musicSlider.style.width = '100px';
         musicSlider.addEventListener('input', function() {
             musicVolume = this.value / 100;
+            window.localStorage.setItem('marconi-music-volume', musicVolume.toString());
             if (currentMusic && currentMusic.playing() && !isMusicMuted) {
                 currentMusic.volume(musicVolume);
             }
@@ -192,8 +221,18 @@
         loopMuteButton.addEventListener('click', function() {
             isLoopMuted = !isLoopMuted;
             loopMuteButton.textContent = isLoopMuted ? '🔇 Loops' : '🔊 Loops';
-            if (currentLoop && currentLoop.playing()) {
-                currentLoop.volume(isLoopMuted ? 0 : loopVolume);
+            window.localStorage.setItem('marconi-loop-mute', isLoopMuted ? 'true' : 'false');
+            
+            if (currentLoop) {
+                if (isLoopMuted) {
+                    currentLoop.volume(0);
+                } else {
+                    currentLoop.volume(loopVolume);
+                    // If unmuting and not playing, start playback
+                    if (!currentLoop.playing() && !isMuted) {
+                        currentLoop.play();
+                    }
+                }
             }
         });
         loopControls.appendChild(loopMuteButton);
@@ -207,6 +246,7 @@
         loopSlider.style.width = '100px';
         loopSlider.addEventListener('input', function() {
             loopVolume = this.value / 100;
+            window.localStorage.setItem('marconi-loop-volume', loopVolume.toString());
             if (currentLoop && currentLoop.playing() && !isLoopMuted) {
                 currentLoop.volume(loopVolume);
             }
@@ -340,9 +380,15 @@
 
                     // Wait for the image to load
                     imageElement.onload = function() {
-                        // Skip blur effect for GIFs
+                        // For GIFs, create a canvas to get the first frame
                         if (imagePath.toLowerCase().endsWith('.gif')) {
-                            setBlurBackground('');
+                            const canvas = document.createElement('canvas');
+                            const ctx = canvas.getContext('2d');
+                            canvas.width = imageElement.naturalWidth;
+                            canvas.height = imageElement.naturalHeight;
+                            ctx.drawImage(imageElement, 0, 0);
+                            const firstFrameUrl = canvas.toDataURL('image/png');
+                            setBlurBackground(firstFrameUrl);
                         } else {
                             setBlurBackground(imagePath);
                         }
