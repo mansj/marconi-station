@@ -392,6 +392,13 @@
                         } else {
                             setBlurBackground(imagePath);
                         }
+                        
+                        // After all images are loaded, scroll to show the new content
+                        if (!firstTime) {
+                            setTimeout(function() {
+                                scrollDown(contentBottomEdgeY());
+                            }, 100); // Small delay to ensure all content is rendered
+                        }
                     };
 
                     imageElement.onerror = function() {

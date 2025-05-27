@@ -998,6 +998,10 @@ body.dark {
     vertical-align: -0.1em;
 }
 
+#story {
+    transition: margin-bottom 0.3s ease-out;
+}
+
 #story.choices-active {
     margin-bottom: 4em;
 }
